@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum Role {
+  TENANT
+  OWNER
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum GenderPreference {
+  MALE
+  FEMALE
+  ANY
+}
+
+enum OwnerType {
+  INDIVIDUAL
+  ORGANIZATION
+}
+
+enum PropertyType {
+  ROOM
+  FLAT
+  PG
+  SHARED_SPACE
+}
+
+enum PropertyStatus {
+  DRAFT
+  PUBLISHED
+  PAUSED
+  RENTED
+  ARCHIVED
+}
+
+enum EnquiryStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CLOSED
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum VerificationType {
+  USER
+  OWNER
+  PROPERTY
+}
+
+// ---------- Models ----------
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  phone        String?  @unique
+  passwordHash String
+  role         Role     @default(TENANT)
+  isActive     Boolean  @default(true)
+  isVerified   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenantProfile   TenantProfile?
+  ownerProfile    OwnerProfile?
+  properties      Property[]
+  savedProperties SavedProperty[]
+  sentEnquiries   Enquiry[]      @relation("EnquiryTenant")
+  receivedEnquiries Enquiry[]    @relation("EnquiryOwner")
+  filedReports    Report[]       @relation("ReportReporter")
+  receivedReports Report[]       @relation("ReportReportedUser")
+  verifications   Verification[] @relation("VerificationUser")
+  reviewsDone     Verification[] @relation("VerificationReviewer")
+
+  @@index([role])
+}
+
+model TenantProfile {
+  id                     String    @id @default(cuid())
+  userId                 String    @unique
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gender                 Gender?
+  age                    Int?
+  occupation             String?
+  collegeOrCompany       String?
+  budgetMin              Int?
+  budgetMax              Int?
+  preferredLocations     String[]  @default([])
+  roomType               String?
+  moveInDate             DateTime?
+  foodPreference         String?
+  smokingPreference      String?
+  sleepSchedule          String?
+  cleanlinessPreference  String?
+  bio                    String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+}
+
+model OwnerProfile {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ownerType          OwnerType          @default(INDIVIDUAL)
+  organizationName   String?
+  phone              String?
+  verificationStatus VerificationStatus @default(PENDING)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+model Property {
+  id               String           @id @default(cuid())
+  ownerId          String
+  owner            User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title            String
+  description      String?
+  propertyType     PropertyType
+  roomType         String?
+  address          String
+  area             String?
+  city             String
+  state            String?
+  pincode          String?
+  latitude         Float?
+  longitude        Float?
+  rent             Int
+  deposit          Int?
+  availableFrom    DateTime?
+  genderPreference GenderPreference @default(ANY)
+  status           PropertyStatus   @default(DRAFT)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  images    PropertyImage[]
+  amenities PropertyAmenity[]
+  savedBy   SavedProperty[]
+  enquiries Enquiry[]
+  reports   Report[]
+  verifications Verification[]
+
+  @@index([ownerId])
+  @@index([city, status])
+  @@index([status, propertyType])
+}
+
+model PropertyImage {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  url        String
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([propertyId])
+}
+
+model Amenity {
+  id        String            @id @default(cuid())
+  name      String            @unique
+  icon      String?
+  createdAt DateTime          @default(now())
+
+  properties PropertyAmenity[]
+}
+
+model PropertyAmenity {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenityId  String
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, amenityId])
+}
+
+model SavedProperty {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     User     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([tenantId, propertyId])
+}
+
+model Enquiry {
+  id         String        @id @default(cuid())
+  tenantId   String
+  tenant     User          @relation("EnquiryTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  ownerId    String
+  owner      User          @relation("EnquiryOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  message    String
+  status     EnquiryStatus @default(PENDING)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([propertyId])
+  @@index([tenantId])
+  @@index([ownerId, status])
+}
+
+model Report {
+  id             String       @id @default(cuid())
+  reporterId     String
+  reporter       User         @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUserId String?
+  reportedUser   User?        @relation("ReportReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  propertyId     String?
+  property       Property?    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  reason         String
+  description    String?
+  status         ReportStatus @default(PENDING)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([status])
+  @@index([reportedUserId])
+}
+
+model Verification {
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation("VerificationUser", fields: [userId], references: [id], onDelete: Cascade)
+  propertyId  String?
+  property    Property?          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  type        VerificationType
+  status      VerificationStatus @default(PENDING)
+  documentUrl String?
+  reviewedById String?
+  reviewedBy  User?              @relation("VerificationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt  DateTime?
+  createdAt   DateTime           @default(now())
+
+  @@index([userId, type])
+  @@index([status])
+}

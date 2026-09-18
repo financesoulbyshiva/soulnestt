@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-canvas: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-1: #f1f5f9;
+  --color-surface-2: #e2e8f0;
+  --color-ink: #0f172a;
+  --color-ink-2: #475569;
+  --color-ink-3: #94a3b8;
+  --color-night: #0b1120;
+
+  --color-primary: #1d4ed8;
+  --color-primary-soft: #dbeafe;
+  --color-secondary: #7c3aed;
+  --color-secondary-soft: #f5f3ff;
+  --color-tertiary: #00b4d8;
+  --color-blossom: #ec4899;
+
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+
+  --shadow-card: 0px 1px 3px rgba(15, 23, 42, 0.05);
+  --shadow-lift: 0px 8px 24px -4px rgba(29, 78, 216, 0.08), 0px 4px 8px -2px rgba(15, 23, 42, 0.04);
+  --shadow-modal: 0px 20px 40px -8px rgba(15, 23, 42, 0.12);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+.gradient-brand {
+  background-image: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 60%, #ec4899 100%);
+}
+
+.text-gradient-brand {
+  background-image: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 60%, #ec4899 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.glass {
+  background-color: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+}
+
+.glass-modal {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}

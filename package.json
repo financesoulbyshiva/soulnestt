@@ -1,0 +1,14 @@
+{
+  "name": "soulnestt",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "frontend": "npm run dev --workspace frontend",
+    "backend": "npm run dev --workspace backend",
+    "dev": "node scripts/dev.js"
+  }
+}
